@@ -1,26 +1,24 @@
-using Neo;
-
 #nullable enable
 
-/// <summary>
-/// This class contains the properties for a single NFT token.
-/// </summary>
-public class TokenState
+// This module contains the classes that carries the property fields
+//  for the NFTs we create.
+
+namespace AndroidTechnologies
 {
     /// <summary>
-    /// The N3 address of the token owner.
+    /// This class contains the properties for a single NFT token.
     /// </summary>
-    public UInt160 Owner = UInt160.Zero;
-    /// <summary>
-    /// The name assigned to the token.
-    /// </summary>
-    public string Name = string.Empty;
-    /// <summary>
-    /// An informative description of the token.
-    /// </summary>
-    public string Description = string.Empty;
-    /// <summary>
-    /// The image associated with the token.
-    /// </summary>
-    public string Image = string.Empty;
+    public class LunaMintsTokenState : Neo.SmartContract.Framework.Nep11TokenState
+    {
+        // NOTE: The "Name" and the "Owner" fields are in the inherited class.
+
+        /// <summary>
+        /// An informative description of the token.
+        /// </summary>
+        public string Description = string.Empty;
+        /// <summary>
+        /// The image associated with the token.
+        /// </summary>
+        public string Image = string.Empty;
+    }
 }

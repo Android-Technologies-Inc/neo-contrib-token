@@ -6,6 +6,7 @@ using Neo.SmartContract.Framework;
 using Neo.SmartContract.Framework.Attributes;
 using Neo.SmartContract.Framework.Native;
 using Neo.SmartContract.Framework.Services;
+using AndroidTechnologies;
 
 #nullable enable
 
@@ -15,16 +16,8 @@ namespace NgdEnterprise.Samples
     [SupportedStandards("NEP-11")]
     [ContractPermission("*", "onNEP11Payment")]
     // public class NeoContributorToken : SmartContract
-    public class NeoContributorToken : Nep11Token<TokenState>
+    public class NeoContributorToken : Nep11Token<LunaMintsTokenState>
     {
-        public class TokenState
-        {
-            public UInt160 Owner = UInt160.Zero;
-            public string Name = string.Empty;
-            public string Description = string.Empty;
-            public string Image = string.Empty;
-        }
-
         /// <summary>
         /// Simple function to both log and then throw and Exception
         ///     using the given error message.
@@ -35,7 +28,7 @@ namespace NgdEnterprise.Samples
             Runtime.Log(errMsg);
             throw new Exception(errMsg);
         }
-        
+
         const byte Prefix_ContractOwner = 0xFF;
 
         [Safe]
@@ -45,8 +38,13 @@ namespace NgdEnterprise.Samples
         public override Map<string, object> Properties(ByteString tokenId)
         {
             StorageMap tokenMap = new(Storage.CurrentContext, Prefix_Token);
-            TokenState token = (TokenState)StdLib.Deserialize(tokenMap[tokenId]);
+            LunaMintsTokenState token = (LunaMintsTokenState)StdLib.Deserialize(tokenMap[tokenId]);
             Map<string, object> map = new();
+
+            // Even though the "owner" and "name" fields reside in the 
+            //  Neo.SmartContract.Framework.Nep11TokenState class inherited
+            //  by our TokenState object, we are responsible for adding those
+            // fields to the map of properties we return.
             map["owner"] = token.Owner;
             map["name"] = token.Name;
             map["description"] = token.Description;
@@ -68,7 +66,7 @@ namespace NgdEnterprise.Samples
             var tokenIdString = nameof(NeoContributorToken) + id;
             var tokenId = (UInt256)CryptoLib.Sha256(tokenIdString);
 
-            var tokenState = new NeoContributorToken.TokenState
+            var tokenState = new LunaMintsTokenState
             {
                 Owner = UInt160.Zero,
                 Name = name,
@@ -109,7 +107,8 @@ namespace NgdEnterprise.Samples
 
                 // We only accept NEO gas payments.
                 if (Runtime.CallingScriptHash != GAS.Hash) 
-                    throw new Exception("Invalid payment type.  Only NEO GAS is allowed.");
+                    reportErrorAndThrow($"{errPrefix}: Invalid script hash");
+
                 // TODO: Need to handle variable amounts.
                 if (amount < 10) throw 
                     new Exception("Insufficient payment price");
@@ -118,7 +117,7 @@ namespace NgdEnterprise.Samples
                 var tokenData = tokenMap[tokenId];
                 if (tokenData == null) 
                     throw new Exception("Invalid token id"); 
-                var token = (NeoContributorToken.TokenState)StdLib.Deserialize(tokenData);
+                var token = (LunaMintsTokenState)StdLib.Deserialize(tokenData);
                 if (token.Owner != UInt160.Zero) 
                     throw new Exception("Specified token already owned");
 
@@ -143,43 +142,6 @@ namespace NgdEnterprise.Samples
                 throw new Exception("Only the contract owner can update the contract");
 
             ContractManagement.Update(nefFile, manifest, null);
-        }
-
-        static void UpdateTotalSupply(BigInteger increment)
-        {
-            StorageContext context = Storage.CurrentContext;
-            byte[] key = new byte[] { Prefix_TotalSupply };
-            BigInteger totalSupply = (BigInteger)Storage.Get(context, key);
-            totalSupply += increment;
-            Storage.Put(context, key, totalSupply);
-        }
-
-        static void UpdateBalance(UInt160 owner, ByteString tokenId, int increment)
-        {
-            StorageMap balanceMap = new(Storage.CurrentContext, Prefix_Balance);
-            BigInteger balance = (BigInteger)balanceMap[owner];
-            balance += increment;
-            if (balance >= 0)
-            {
-                if (balance.IsZero)
-                    balanceMap.Delete(owner);
-                else
-                    balanceMap.Put(owner, balance);
-            }
-
-            StorageMap accountMap = new(Storage.CurrentContext, Prefix_AccountToken);
-            ByteString key = owner + tokenId;
-            if (increment > 0)
-                accountMap.Put(key, 0);
-            else
-                accountMap.Delete(key);
-        }
-
-        static void PostTransfer(UInt160? from, UInt160 to, ByteString tokenId, object? data)
-        {
-            OnTransfer(from, to, 1, tokenId);
-            if (to is not null && ContractManagement.GetContract(to) is not null)
-                Contract.Call(to, "onNEP11Payment", CallFlags.All, from, 1, tokenId, data);
         }
 
         static bool ValidateContractOwner()
