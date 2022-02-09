@@ -26,7 +26,7 @@ namespace client
         {
             try
             {
-                // load neo express file so we can determin RPC port + protocol settings
+                // load neo express file so we can determine RPC port + protocol settings
                 var rpcClient = chain.GetRpcClient();
                 var walletApi = new WalletAPI(rpcClient);
 
