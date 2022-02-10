@@ -1,7 +1,7 @@
 [
   {
     "contract": "LunaToken",
-    "operation": "mint",
+    "operation": "mintLunaToken",
     "args": [
         "Erik Zhang",
         "Founder and Core developer of Neo, Chair of Neo Foundation",

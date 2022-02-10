@@ -1,7 +1,7 @@
 [
   {
     "contract": "LunaToken",
-    "operation": "mint",
+    "operation": "mintLunaToken",
     "args": [
         "John deVadoss",
         "Founder of NGD Enterprise, Director of Enterprise Adoption",

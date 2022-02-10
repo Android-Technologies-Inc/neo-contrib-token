@@ -209,12 +209,12 @@
             "request": "launch",
             "program": "${workspaceFolder}/token-contract/bin/sc/LunaToken.nef",
             "neo-express": "${workspaceFolder}/default.neo-express",
-            "checkpoint": "${workspaceFolder}/checkpoints/token-listed.neoxp-checkpoint",
+            "checkpoint": "${workspaceFolder}/checkpoints/contracts-deployed.neoxp-checkpoint",
             "invocation": {
                 "invoke-file": "${workspaceFolder}/invoke-files/mint-hongfei.neo-invoke.json"
             },
             "signers": [
-                "@bob"
+                "@owen"
             ]
         },
     ]

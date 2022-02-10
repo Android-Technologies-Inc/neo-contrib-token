@@ -1,6 +1,6 @@
 [
   {
-    "contract": "NeoToken",
+    "contract": "GasToken",
     "operation": "transfer",
     "args": [
       "@alice",
