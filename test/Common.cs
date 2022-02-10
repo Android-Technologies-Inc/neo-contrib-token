@@ -4,7 +4,7 @@ using Neo.Cryptography;
 using Neo.IO;
 using Neo.Persistence;
 using NeoTestHarness;
-using testNeoContributorToken;
+using testLunaToken;
 
 namespace test
 {
@@ -16,7 +16,7 @@ namespace test
         {
             // Nep11Token class generates NFT identifiers by combining the TOKEN_ID_SALT with a token counter then takes a SHA256 hash of the result.
             // Since this checkpoint has no NFTs deployed yet, the token ID should be the SHA256 hash of the token script hash.
-            var scriptHash = Neo.Utility.StrictUTF8.GetBytes(nameof(NeoContributorToken) + index.ToString());
+            var scriptHash = Neo.Utility.StrictUTF8.GetBytes(nameof(LunaToken) + index.ToString());
             return scriptHash.Sha256();
         }
 

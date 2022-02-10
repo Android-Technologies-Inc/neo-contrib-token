@@ -20,9 +20,9 @@ namespace client
                 // load neo express file so we can determin RPC port + protocol settings
                 var rpcClient = chain.GetRpcClient();
 
-                // List the deployed contracts (neo-express custom functionality) and find the NeoContributorToken script hash
+                // List the deployed contracts (neo-express custom functionality) and find the LunaToken script hash
                 var contracts = await rpcClient.ListContractsAsync();
-                var contractHash = contracts["NeoContributorToken"];
+                var contractHash = contracts["LunaToken"];
 
                 // print the list of minted tokens
                 var tokensOf = Available

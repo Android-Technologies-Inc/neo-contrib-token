@@ -6,10 +6,11 @@ using Neo.SmartContract;
 using Neo.VM;
 using NeoTestHarness;
 using FluentAssertions;
-using testNeoContributorToken;
 using Neo.Assertions;
 using Neo.BlockchainToolkit.SmartContract;
 using Neo.SmartContract.Native;
+using testLunaToken;
+// using AndroidTechnologies;
 
 namespace test
 {
@@ -34,7 +35,9 @@ namespace test
             using var snapshot = fixture.GetSnapshot();
             using var engine = new TestApplicationEngine(snapshot, settings, owen);
 
-            engine.ExecuteScript<NeoContributorToken>(c => c.mint("Test Contributor", "Test Description", "https://i.picsum.photos/id/856/500/500.jpg?hmac=BOzGgyuyo7weE0xNPxJ_8cw3I7oWUwIiHRN_Y51EoNs"));
+            engine.ExecuteScript<LunaToken>
+            (c => 
+                c.mintLunaToken("Test Contributor", "Test Description", "https://i.picsum.photos/id/856/500/500.jpg?hmac=BOzGgyuyo7weE0xNPxJ_8cw3I7oWUwIiHRN_Y51EoNs"));
             engine.State.Should().Be(VMState.HALT);
             engine.ResultStack.Should().HaveCount(1);
 
@@ -53,17 +56,13 @@ namespace test
 
             using var snapshot = fixture.GetSnapshot();
 
-            var scriptHash = snapshot.GetContractScriptHash<NeoContributorToken>();
+            var scriptHash = snapshot.GetContractScriptHash<LunaToken>();
             var tokenId = snapshot.CalculateTokenId(0);
 
             using var engine = new TestApplicationEngine(snapshot, settings, alice);
 
             using var sb = new ScriptBuilder();
             sb.EmitDynamicCall(NativeContract.NEO.Hash, "transfer", alice, scriptHash, 10);
-            // engine.ExecuteScript<NeoContributorToken>(c => c.ownerOf(tokenId,));
-            // engine.State.Should().Be(VMState.HALT);
-            // engine.ResultStack.Should().HaveCount(1);
-            // engine.ResultStack.Peek(0).Should().BeEquivalentTo(Neo.UInt160.Zero);
         }
 
         
@@ -77,7 +76,7 @@ namespace test
             var tokenId = snapshot.CalculateTokenId(0);
 
             using var engine = new TestApplicationEngine(snapshot, settings);
-            engine.ExecuteScript<NeoContributorToken>(c => c.ownerOf(tokenId));
+            engine.ExecuteScript<LunaToken>(c => c.ownerOf(tokenId));
             engine.State.Should().Be(VMState.HALT);
             engine.ResultStack.Should().HaveCount(1);
             engine.ResultStack.Peek(0).Should().BeEquivalentTo(Neo.UInt160.Zero);
@@ -92,7 +91,7 @@ namespace test
             var expectedTokenId = snapshot.CalculateTokenId(0);
 
             using var engine = new TestApplicationEngine(snapshot, settings);
-            engine.ExecuteScript<NeoContributorToken>(c => c.tokens());
+            engine.ExecuteScript<LunaToken>(c => c.tokens());
 
             engine.State.Should().Be(VMState.HALT);
             engine.ResultStack.Should().HaveCount(1);

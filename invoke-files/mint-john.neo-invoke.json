@@ -1,6 +1,6 @@
 [
   {
-    "contract": "NeoContributorToken",
+    "contract": "LunaToken",
     "operation": "mint",
     "args": [
         "John deVadoss",

@@ -1,6 +1,6 @@
 [
   {
-    "contract": "NeoContributorToken",
+    "contract": "LunaToken",
     "operation": "withdraw",
     "args": [
       "@owen"

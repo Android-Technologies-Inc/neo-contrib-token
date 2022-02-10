@@ -30,15 +30,15 @@ namespace client
                 var rpcClient = chain.GetRpcClient();
                 var walletApi = new WalletAPI(rpcClient);
 
-                // List the deployed contracts (neo-express custom functionality) and find the NeoContributorToken script hash
+                // List the deployed contracts (neo-express custom functionality) and find the LunaToken script hash
                 var contracts = await rpcClient.ListContractsAsync();
-                var contractHash = contracts["NeoContributorToken"];
+                var contractHash = contracts["LunaToken"];
 
                 // retrieve the private key for the specified account from neo express file
                 var wallet = chain.Wallets.SingleOrDefault(w => w.Name.Equals(Account, StringComparison.OrdinalIgnoreCase));
                 var keyPair = new KeyPair(Convert.FromHexString(wallet.DefaultAccount.PrivateKey));
 
-                // Transfer 10 neo to the NeoContributorToken, passing in the desired tokenId as the data parameter
+                // Transfer 10 neo to the LunaToken, passing in the desired tokenId as the data parameter
                 var tokenId = Convert.FromHexString(TokenId);
                 var tx = await walletApi.TransferAsync(NativeContract.NEO.Hash, keyPair, contractHash, 10, tokenId);
 

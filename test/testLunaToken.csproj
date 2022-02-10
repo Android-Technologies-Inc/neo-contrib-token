@@ -2,8 +2,8 @@
 
   <PropertyGroup>
     <IsPackable>false</IsPackable>
-    <NeoContractManifestPath>..\token-contract\bin\sc\NeoContributorToken.manifest.json</NeoContractManifestPath>
-    <NeoContractName>NeoContribToken</NeoContractName>
+    <NeoContractManifestPath>..\token-contract\bin\sc\LunaToken.manifest.json</NeoContractManifestPath>
+    <NeoContractName>LunaToken</NeoContractName>
     <NeoTestPackagesVersion>3.1.10</NeoTestPackagesVersion>
     <TargetFramework>net6.0</TargetFramework>
   </PropertyGroup>
@@ -26,11 +26,11 @@
 
   <ItemGroup>
     <ContractProjectReference Include="..\store-contract\DemoShopContract.csproj" />
-    <ContractProjectReference Include="..\token-contract\NeoContributorToken.csproj" />
+    <ContractProjectReference Include="..\token-contract\LunaToken.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\token-contract\NeoContributorToken.csproj">
+    <ProjectReference Include="..\token-contract\LunaToken.csproj">
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
   </ItemGroup>

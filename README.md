@@ -2,7 +2,7 @@
 #
 # NFT Tutorial
 
-## NeoContributorToken
+## LunaToken
 1) mint tokens (name, description, image URL) 
 2) buy a specified token by transferring 10 NEO to the contract 
 3) contract owner can withdraw NEO spent on NFTs 

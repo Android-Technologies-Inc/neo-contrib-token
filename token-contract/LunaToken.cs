@@ -10,13 +10,13 @@ using AndroidTechnologies;
 
 #nullable enable
 
-namespace NgdEnterprise.Samples
+namespace AndroidTechnologies
 {
-    [DisplayName("NgdEnterprise.Samples.NeoContributorToken")]
+    [DisplayName("AndroidTechnologies.LunaToken")]
     [SupportedStandards("NEP-11")]
     [ContractPermission("*", "onNEP11Payment")]
-    // public class NeoContributorToken : SmartContract
-    public class NeoContributorToken : Nep11Token<LunaMintsTokenState>
+    // public class LunaMintsTokenState : SmartContract
+    public class LunaToken : Nep11Token<LunaMintsTokenState>
     {
         /// <summary>
         /// Simple function to both log and then throw and Exception
@@ -52,19 +52,13 @@ namespace NgdEnterprise.Samples
             return map;
         }
 
-        public static UInt256 Mint(string name, string description, string image)
+        public static ByteString mintLunaToken(string name, string description, string image)
         {
-            if (!ValidateContractOwner()) 
+            if (!ValidateContractOwner())
                 throw new Exception("Only the contract owner can mint tokens");
 
-            // generate new token ID
-            StorageContext context = Storage.CurrentContext;
-            byte[] key = new byte[] { Prefix_TokenId };
-            var id = (BigInteger)Storage.Get(context, key);
-            Storage.Put(context, key, id + 1);
-
-            var tokenIdString = nameof(NeoContributorToken) + id;
-            var tokenId = (UInt256)CryptoLib.Sha256(tokenIdString);
+            // Generate new token ID.
+            var tokenId = NewTokenId();
 
             var tokenState = new LunaMintsTokenState
             {
@@ -74,11 +68,8 @@ namespace NgdEnterprise.Samples
                 Image = image,
             };
 
-            StorageMap tokenMap = new(Storage.CurrentContext, Prefix_Token);
-            tokenMap[tokenId] = StdLib.Serialize(tokenState);
-            UpdateBalance(tokenState.Owner, tokenId, +1);
-            UpdateTotalSupply(+1);
-            PostTransfer(null, tokenState.Owner, tokenId, null);
+            // Pass the call on to the NEP11Token.Mint() method.
+            Mint(tokenId, tokenState);
 
             return tokenId;
         }
