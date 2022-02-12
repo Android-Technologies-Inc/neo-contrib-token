@@ -29,6 +29,35 @@ namespace AndroidTechnologies
             throw new Exception(errMsg);
         }
 
+        /*
+        private static string uint160ToString(UInt160 u160)
+        {
+            var retStr = "";
+
+            foreach (var b in u160)
+            {
+                string strByte = b.ToString();
+                retStr += strByte;
+            }
+
+            return retStr;
+        }
+        */
+
+        private static void logSideBySideHashDisplay(UInt160 hash_1, UInt160 hash_2)
+        {
+            var loopCount = Math.Max(hash_1.Length, hash_2.Length);
+
+            for (var ndx = 0; ndx < loopCount; ndx++)
+            {
+                var b1 = ndx < hash_1.Length ? hash_1[ndx] : -1;
+                var b2 = ndx < hash_2.Length ? hash_2[ndx] : -1;
+
+                string str = $"[{b1}], [{ b2}]";
+                Runtime.Log(str);
+            }
+        }
+
         const byte Prefix_ContractOwner = 0xFF;
 
         [Safe]
@@ -96,13 +125,22 @@ namespace AndroidTechnologies
             {
                 var tokenId = (ByteString)data;
 
+                if (Runtime.CallingScriptHash == GAS.Hash)
+                    Runtime.Log($"{errPrefix} The GAS contract is calling us.");
+                else if (Runtime.CallingScriptHash == NEO.Hash)
+                    Runtime.Log($"{errPrefix} The NEO contract is calling us.");
+                else if (Runtime.CallingScriptHash == Runtime.CallingScriptHash)
+                    Runtime.Log($"{errPrefix} The LunaToken contract is calling itself.");
+                else
+                    Runtime.Log($"{errPrefix} Unknown N3 address is calling us");
+
                 // We only accept NEO gas payments.
                 if (Runtime.CallingScriptHash != GAS.Hash)
                 {
                     // TODO: Mention the (addr) cast for viewing script hashes
                     //  as string instead of an array of hex bytes.
-                    var strScriptHash = (addr)Runtime.CallingScriptHash;
-                    reportErrorAndThrow($"{errPrefix}: Invalid script hash: {strScriptHash}");
+                    logSideBySideHashDisplay(Runtime.CallingScriptHash, GAS.Hash);
+                    reportErrorAndThrow($"{errPrefix}: Invalid script hash");
                 }
 
 

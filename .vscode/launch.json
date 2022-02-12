@@ -93,7 +93,7 @@
             "neo-express": "${workspaceFolder}/default.neo-express",
             "checkpoint": "${workspaceFolder}/checkpoints/tokens-minted.neoxp-checkpoint",
             "invocation": {
-                "contract": "NeoToken",
+                "contract": "GasToken",
                 "operation": "transfer",
                 "args": [
                   "@alice",
