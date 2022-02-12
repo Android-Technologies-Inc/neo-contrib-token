@@ -2,7 +2,6 @@
 using System.ComponentModel;
 using System.Numerics;
 using Neo;
-using Neo.SmartContract;
 using Neo.SmartContract.Framework;
 using Neo.SmartContract.Framework.Attributes;
 using Neo.SmartContract.Framework.Native;
@@ -39,33 +38,44 @@ namespace NgdEnterprise.Samples
 
         public static void OnNEP11Payment(UInt160 from, BigInteger amount, ByteString tokenId, object data)
         {
-            if (from is null || !from.IsValid) throw new Exception("The argument \"from\" can't be null");
-            if (amount != 1) throw new Exception("DemoShop only accepts whole NEP-11 tokens");
-            if (tokenId is null) throw new Exception("The argument \"tokenId\" can't be null");
+            if (from is null || !from.IsValid) 
+                throw new Exception("The argument \"from\" can't be null");
+            if (amount != 1) 
+                throw new Exception("DemoShop only accepts whole NEP-11 tokens");
+            if (tokenId is null) 
+                throw new Exception("The argument \"tokenId\" can't be null");
             var price = (BigInteger)data;
-            if (price <= 0) throw new Exception("Sale price must be greater than zero");
+            if (price <= 0) 
+                throw new Exception("Sale price must be greater than zero");
 
             CreateListing(Runtime.CallingScriptHash, tokenId, from, price);
         }
 
         public static void OnNEP17Payment(UInt160 from, BigInteger amount, object data)
         {
-            if (from is null || !from.IsValid) throw new Exception("The argument \"from\" can't be null");
-            if (Runtime.CallingScriptHash != NEO.Hash) throw new Exception("DemoShop only accepts NEO tokens");
-            if (amount <= 0) throw new Exception("Invalid payment amount");
-            if (data == null) throw new Exception("Must specify listing id when transfering NEP-17 tokens");
+            if (from is null || !from.IsValid) 
+                throw new Exception("The argument \"from\" can't be null");
+            if (Runtime.CallingScriptHash != GAS.Hash) 
+                throw new Exception("DemoShop only accepts GAS tokens");
+            if (amount <= 0) 
+                throw new Exception("Invalid payment amount");
+            if (data == null) 
+                throw new Exception("Must specify listing id when transfering NEP-17 tokens");
 
-            if (!CompleteSale((ByteString)data, from, amount)) throw new Exception("Sale failed to complete");
+            if (!CompleteSale((ByteString)data, from, amount)) 
+                throw new Exception("Sale failed to complete");
         }
 
         public static bool CancelListing(ByteString listingId)
         {
             StorageMap listingMap = new(Storage.CurrentContext, Prefix_Listing);
             var listingData = listingMap[listingId];
-            if (listingData == null) throw new Exception("invalid listingId");
+            if (listingData == null) 
+                throw new Exception("invalid listingId");
 
             var listing = (ListingState)StdLib.Deserialize(listingData);
-            if (!Runtime.CheckWitness(listing.OriginalOwner)) throw new Exception("only the original owner can cancel a listing");
+            if (!Runtime.CheckWitness(listing.OriginalOwner)) 
+                throw new Exception("only the original owner can cancel a listing");
 
             if (!Nep11Transfer(listing.TokenScriptHash, listing.OriginalOwner, listing.TokenId, null))
             {
@@ -101,7 +111,7 @@ namespace NgdEnterprise.Samples
             var listingData = listingMap[listingId];
             if (listingData == null)
             {
-                Runtime.Log("Invalid listingId");
+                Runtime.Log("Invalid listing ID");
                 return false;
             }
 
@@ -113,7 +123,7 @@ namespace NgdEnterprise.Samples
             }
 
             if (!NEO.Transfer(Runtime.ExecutingScriptHash, listing.OriginalOwner, listing.Price))
-                throw new Exception("NEO Transfer failed");
+                throw new Exception("GAS Transfer failed");
 
             if (!Nep11Transfer(listing.TokenScriptHash, buyer, listing.TokenId))
                 throw new Exception("NEP11 Transfer failed");
@@ -143,8 +153,10 @@ namespace NgdEnterprise.Samples
 
         public bool Withdraw(UInt160 to)
         {
-            if (!ValidateContractOwner()) throw new Exception("Only the contract owner can withdraw");
-            if (to == UInt160.Zero || !to.IsValid) throw new Exception("Invalid withrdrawl address");
+            if (!ValidateContractOwner()) 
+                throw new Exception("Only the contract owner can withdraw");
+            if (to == UInt160.Zero || !to.IsValid) 
+                throw new Exception("Invalid withrdrawl address");
 
             var balance = NEO.BalanceOf(Runtime.ExecutingScriptHash);
             if (balance <= 0) return false;
@@ -164,7 +176,8 @@ namespace NgdEnterprise.Samples
 
         public static void Update(ByteString nefFile, string manifest)
         {
-            if (!ValidateContractOwner()) throw new Exception("Only the contract owner can update the contract");
+            if (!ValidateContractOwner()) 
+                throw new Exception("Only the contract owner can update the contract");
 
             ContractManagement.Update(nefFile, manifest, null);
         }

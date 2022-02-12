@@ -1,19 +1,33 @@
+# Transfer some GAS from the Genesis wallet to our test accounts.
 transfer 10000 gas genesis owen
 transfer 10000 gas genesis steve
 transfer 10000 gas genesis alice
 transfer 10000 gas genesis bob
 
+# Transfer some NEO from the Genesis wallet to our test accounts.
 transfer 10000 neo genesis alice
 transfer 10000 neo genesis bob
 
+# Deploy the main NFT smart contract.
 contract deploy ./token-contract/bin/sc/LunaToken.nef owen
+# Deploy the demonstration smart contract.
 contract deploy ./store-contract/bin/sc/DemoShopContract.nef steve
+# Create a checkpoint that has the GAS and NEO transfers and the 
+#  deployed smart contracts, but nothing else.
 checkpoint create ./checkpoints/contracts-deployed -f
 
+# Mint some NFTs.
 contract invoke ./invoke-files/mint-hongfei.neo-invoke.json owen
 contract invoke ./invoke-files/mint-erik.neo-invoke.json owen
 contract invoke ./invoke-files/mint-john.neo-invoke.json owen
 checkpoint create ./checkpoints/tokens-minted -f
+
+# Create a checkpoint that has the minted NFTs along with the 
+#  state and contents from the previous checkpoint.
+# Examine the tokens just minted.
+contract invoke ./invoke-files/list-nft.neo-invoke.json alice
+checkpoint create ./checkpoints/token-listed -f
+
 
 contract invoke ./invoke-files/buy-nft.neo-invoke.json alice
 checkpoint create ./checkpoints/token-bought -f

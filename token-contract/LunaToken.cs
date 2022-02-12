@@ -97,8 +97,14 @@ namespace AndroidTechnologies
                 var tokenId = (ByteString)data;
 
                 // We only accept NEO gas payments.
-                if (Runtime.CallingScriptHash != GAS.Hash) 
-                    reportErrorAndThrow($"{errPrefix}: Invalid script hash");
+                if (Runtime.CallingScriptHash != GAS.Hash)
+                {
+                    // TODO: Mention the (addr) cast for viewing script hashes
+                    //  as string instead of an array of hex bytes.
+                    var strScriptHash = (addr)Runtime.CallingScriptHash;
+                    reportErrorAndThrow($"{errPrefix}: Invalid script hash: {strScriptHash}");
+                }
+
 
                 // TODO: Need to handle variable amounts.
                 if (amount < 10) throw 
