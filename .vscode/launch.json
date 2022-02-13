@@ -48,7 +48,7 @@
             "deploy-signer": "@owen"
         },
         {
-            "name": "mint (succeed)",
+            "name": "mint (succeed::LunaToken)",
             "type": "neo-contract",
             "request": "launch",
             "program": "${workspaceFolder}/token-contract/bin/sc/LunaToken.nef",
@@ -67,7 +67,7 @@
             ]
         },
         {
-            "name": "mint (fail)",
+            "name": "mint (fail::LunaToken)",
             "type": "neo-contract",
             "request": "launch",
             "program": "${workspaceFolder}/token-contract/bin/sc/LunaToken.nef",
@@ -86,7 +86,7 @@
             ]
         },
         {
-            "name": "buy-nft",
+            "name": "buy-nft (LunaToken)",
             "type": "neo-contract",
             "request": "launch",
             "program": "${workspaceFolder}/token-contract/bin/sc/LunaToken.nef",
@@ -98,7 +98,7 @@
                 "args": [
                   "@alice",
                   "#LunaToken",
-                  10,
+                  1,
                   "0x99E791FD36B4924F19C15617B6CEB589006AA8381E5CF946B1973279EA4B5EFB"
                 ]
             },
@@ -107,7 +107,7 @@
             ]
         },
         {
-            "name": "nft-withdraw",
+            "name": "nft-withdraw (LunaToken)",
             "type": "neo-contract",
             "request": "launch",
             "program": "${workspaceFolder}/token-contract/bin/sc/LunaToken.nef",
@@ -124,7 +124,7 @@
             ]
         },
         {
-            "name": "list-nft (1)",
+            "name": "list-nft (LunaToken)",
             "type": "neo-contract",
             "request": "launch",
             "program": "${workspaceFolder}/token-contract/bin/sc/LunaToken.nef",
@@ -138,7 +138,7 @@
             ]
         },
         {
-            "name": "list-nft (2)",
+            "name": "list-nft (DemoShopContract)",
             "type": "neo-contract",
             "request": "launch",
             "program": "${workspaceFolder}/store-contract/bin/sc/DemoShopContract.nef",
@@ -152,7 +152,7 @@
             ]
         },
         {
-            "name": "get-listings",
+            "name": "get-listings (DemoShopContract)",
             "type": "neo-contract",
             "request": "launch",
             "program": "${workspaceFolder}/store-contract/bin/sc/DemoShopContract.nef",
@@ -164,7 +164,7 @@
             },
         },
         {
-            "name": "buy-listed-nft (1)",
+            "name": "buy-listed-nft (DemoShopContract)",
             "type": "neo-contract",
             "request": "launch",
             "program": "${workspaceFolder}/store-contract/bin/sc/DemoShopContract.nef",
@@ -178,7 +178,7 @@
             ]
         },
         {
-            "name": "buy-listed-nft (2)",
+            "name": "buy-listed-nft (LunaToken)",
             "type": "neo-contract",
             "request": "launch",
             "program": "${workspaceFolder}/token-contract/bin/sc/LunaToken.nef",
@@ -192,7 +192,7 @@
             ]
         },
         {
-            "name": "cancel-listing",
+            "name": "cancel-listing (DemoShopContract)",
             "type": "neo-contract",
             "request": "launch",
             "program": "${workspaceFolder}/store-contract/bin/sc/DemoShopContract.nef",
@@ -204,7 +204,7 @@
             },
         },
         {
-            "name": "mint-hongfei-nft",
+            "name": "mint-hongfei-nft (LunaToken)",
             "type": "neo-contract",
             "request": "launch",
             "program": "${workspaceFolder}/token-contract/bin/sc/LunaToken.nef",

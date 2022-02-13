@@ -125,6 +125,11 @@ namespace AndroidTechnologies
             {
                 var tokenId = (ByteString)data;
 
+                Runtime.Log($"{errPrefix}: tokenId: {tokenId}");
+
+                // string strCallingScriptHash = UInt160.ToAddress(Runtime.CallingScriptHash.ToArray());
+                // Runtime.Log($"{errPrefix} Calling script hash: {strCallingScriptHash}");
+
                 if (Runtime.CallingScriptHash == GAS.Hash)
                     Runtime.Log($"{errPrefix} The GAS contract is calling us.");
                 else if (Runtime.CallingScriptHash == NEO.Hash)
@@ -143,21 +148,25 @@ namespace AndroidTechnologies
                     reportErrorAndThrow($"{errPrefix}: Invalid script hash");
                 }
 
-
-                // TODO: Need to handle variable amounts.
-                if (amount < 10) throw 
-                    new Exception("Insufficient payment price");
+                if (amount < 1)  
+                    reportErrorAndThrow($"{errPrefix}: Insufficient payment amount");
+                if (amount > 2) 
+                    reportErrorAndThrow($"{errPrefix}: Payment amount is too large");
 
                 StorageMap tokenMap = new(Storage.CurrentContext, Prefix_Token);
                 var tokenData = tokenMap[tokenId];
-                if (tokenData == null) 
-                    throw new Exception("Invalid token id"); 
+                if (tokenData == null)
+                {
+                    reportErrorAndThrow($"{errPrefix}: Invalid token id");
+                }
+
                 var token = (LunaMintsTokenState)StdLib.Deserialize(tokenData);
+
                 if (token.Owner != UInt160.Zero) 
-                    throw new Exception("Specified token already owned");
+                    reportErrorAndThrow($"{errPrefix}: Specified token already owned");
 
                 if (!Transfer(from, tokenId, null)) 
-                    throw new Exception("Transfer Failed");
+                    reportErrorAndThrow($"{errPrefix}: Transfer Failed");
             }
         }
 

@@ -5,7 +5,7 @@
     "args": [
       "@alice",
       "#LunaToken",
-      10,
+      1,
       "0x99E791FD36B4924F19C15617B6CEB589006AA8381E5CF946B1973279EA4B5EFB"
     ]
   }

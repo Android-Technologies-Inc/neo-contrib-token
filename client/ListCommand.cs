@@ -17,7 +17,7 @@ namespace client
         {
             try
             {
-                // load neo express file so we can determin RPC port + protocol settings
+                // load neo express file so we can determine RPC port and protocol settings
                 var rpcClient = chain.GetRpcClient();
 
                 // List the deployed contracts (neo-express custom functionality) and find the LunaToken script hash
