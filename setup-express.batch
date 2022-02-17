@@ -24,10 +24,14 @@ checkpoint create ./checkpoints/tokens-minted -f
 
 # Create a checkpoint that has the minted NFTs along with the 
 #  state and contents from the previous checkpoint.
-# Examine the tokens just minted.
-contract invoke ./invoke-files/list-nft.neo-invoke.json alice
+
+# Examine the token just minted for Da Hongfei.  In the current
+#  code base, we have to transfer the token first to an owner 
+#  before it can be listed.
+contract invoke ./invoke-files/transfer-then-list-nft.neo-invoke.json alice
 checkpoint create ./checkpoints/token-listed -f
 
+# Test Alice buying the Da Hongfei NFT.
 contract invoke ./invoke-files/buy-nft.neo-invoke.json alice
 checkpoint create ./checkpoints/token-bought -f
 

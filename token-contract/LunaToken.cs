@@ -6,7 +6,6 @@ using Neo.SmartContract.Framework;
 using Neo.SmartContract.Framework.Attributes;
 using Neo.SmartContract.Framework.Native;
 using Neo.SmartContract.Framework.Services;
-using AndroidTechnologies;
 
 #nullable enable
 
@@ -18,6 +17,24 @@ namespace AndroidTechnologies
     // public class LunaMintsTokenState : SmartContract
     public class LunaToken : Nep11Token<LunaMintsTokenState>
     {
+               // ----------- BEGIN: EVENTS ----------
+
+        // These are the events emitted by this smart contract.
+
+        // >>>>> EVENT: NEW TOKEN MINTED - A new token has been minted.
+
+        // Define a delegate for the event.
+        public delegate void OnNewLunamintTokenDelegate(ByteString idOfToken, string nameOfToken);
+
+        // Declare the event name and event.
+        [DisplayName("NewTokenCreated")]
+        public static event OnNewLunamintTokenDelegate OnNewLunamintToken;
+
+        // ----------- END  : EVENTS ----------
+
+        // >>>>> EVENT: PAYMENT MADE - A payment had been made to a
+        //  a player or a band after a recently finished game.
+
         /// <summary>
         /// Simple function to both log and then throw and Exception
         ///     using the given error message.
@@ -81,13 +98,56 @@ namespace AndroidTechnologies
             return map;
         }
 
+        /// <summary>
+        /// Create a token ID for a new NFT.
+        /// </summary>
+        /// <returns>Returns a new, unique ID for use
+        ///  with a new NFT.</returns>
+        private static ByteString MyNewTokenId() {
+            // If we are executing on a private instance of the NEO
+            //  blockchain (NEO Express), use a simple token ID
+            //  that is not based on the hash of the currently
+            //  executing smart contract (this one).  That way
+            //  we don't break any invoke files that have 
+            //  token IDs in their parameter values.  If we are 
+            //  not running on a private instance, then use the
+            //  method found in the Nep11Token class we
+            //  inherit from, that does use the script hash
+            //  to build the token ID.
+            if (MyUtilities.isNeoExpress()) {
+                StorageContext context = Storage.CurrentContext;
+                byte[] key = new byte[] { Prefix_TokenId };
+                ByteString id = Storage.Get(context, key);
+                Storage.Put(context, key, (BigInteger)id + 1);
+                // Do not use the executing script hash to build
+                //  the token ID or we may break any invoke files
+                //  that have token IDs in their parameter values
+                //  if we modify this smart cotnract.
+                // ByteString data = Runtime.ExecutingScriptHash;
+                ByteString data = UInt160.Zero;
+                if (id is not null)
+                    data += id;
+                // return CryptoLib.Sha256(data);                
+                // We don't hash the value if we are running on 
+                //  a private blockchain.
+                return data;
+            }
+            else
+            {
+                // We are not running on a private NEO blockchain.
+                //  Pass the call on to the Nep11Token smart contract
+                //  we inherit from.
+                return NewTokenId();
+            }
+        }
+
         public static ByteString mintLunaToken(string name, string description, string image)
         {
             if (!ValidateContractOwner())
                 throw new Exception("Only the contract owner can mint tokens");
 
             // Generate new token ID.
-            var tokenId = NewTokenId();
+            var tokenId = MyNewTokenId();
 
             var tokenState = new LunaMintsTokenState
             {
@@ -99,6 +159,9 @@ namespace AndroidTechnologies
 
             // Pass the call on to the NEP11Token.Mint() method.
             Mint(tokenId, tokenState);
+
+            // Emit an event regarding the new token.
+            OnNewLunamintToken(tokenId, name);
 
             return tokenId;
         }
@@ -124,8 +187,6 @@ namespace AndroidTechnologies
             if (data != null)
             {
                 var tokenId = (ByteString)data;
-
-                Runtime.Log($"{errPrefix}: tokenId: {tokenId}");
 
                 // string strCallingScriptHash = UInt160.ToAddress(Runtime.CallingScriptHash.ToArray());
                 // Runtime.Log($"{errPrefix} Calling script hash: {strCallingScriptHash}");

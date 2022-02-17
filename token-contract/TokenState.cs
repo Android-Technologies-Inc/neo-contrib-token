@@ -1,7 +1,7 @@
-#nullable enable
-
 // This module contains the classes that carries the property fields
 //  for the NFTs we create.
+
+#nullable enable
 
 namespace AndroidTechnologies
 {

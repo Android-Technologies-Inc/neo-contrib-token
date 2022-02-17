@@ -4,7 +4,7 @@
     "operation": "transfer",
     "args": [
       "#DemoShopContract",
-      "0x99E791FD36B4924F19C15617B6CEB589006AA8381E5CF946B1973279EA4B5EFB",
+      "0xc81bd12d749d1b2f6bc916ab638633370f841555f60d3d6fe53ad5fd9a396609",
       20
     ]
   }

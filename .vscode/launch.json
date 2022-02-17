@@ -99,7 +99,7 @@
                   "@alice",
                   "#LunaToken",
                   1,
-                  "0x99E791FD36B4924F19C15617B6CEB589006AA8381E5CF946B1973279EA4B5EFB"
+                  "0xb6f9395b383f1107666de083acfd7c1af569a28d6ebaf39f750f8555259f2ce5"
                 ]
             },
             "signers": [
@@ -124,28 +124,29 @@
             ]
         },
         {
-            "name": "list-nft (LunaToken)",
+            "name": "transfer-then-list-nft (LunaToken)",
             "type": "neo-contract",
             "request": "launch",
             "program": "${workspaceFolder}/token-contract/bin/sc/LunaToken.nef",
             "neo-express": "${workspaceFolder}/default.neo-express",
-            "checkpoint": "${workspaceFolder}/checkpoints/token-bought.neoxp-checkpoint",
+            // "checkpoint": "${workspaceFolder}/checkpoints/token-bought.neoxp-checkpoint",
+            "checkpoint": "${workspaceFolder}/checkpoints/tokens-minted.neoxp-checkpoint",
             "invocation": {
-                "invoke-file": "${workspaceFolder}/invoke-files/list-nft.neo-invoke.json"
+                "invoke-file": "${workspaceFolder}/invoke-files/transfer-then-list-nft.neo-invoke.json"
             },
             "signers": [
                 "@alice"
             ]
         },
         {
-            "name": "list-nft (DemoShopContract)",
+            "name": "transfer-then-list-nft (DemoShopContract)",
             "type": "neo-contract",
             "request": "launch",
             "program": "${workspaceFolder}/store-contract/bin/sc/DemoShopContract.nef",
             "neo-express": "${workspaceFolder}/default.neo-express",
             "checkpoint": "${workspaceFolder}/checkpoints/token-bought.neoxp-checkpoint",
             "invocation": {
-                "invoke-file": "${workspaceFolder}/invoke-files/list-nft.neo-invoke.json"
+                "invoke-file": "${workspaceFolder}/invoke-files/transfer-then-list-nft.neo-invoke.json"
             },
             "signers": [
                 "@alice"
