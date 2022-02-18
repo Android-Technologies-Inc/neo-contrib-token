@@ -1,4 +1,11 @@
-﻿using System;
+﻿// This is the smart contract for the LunaMint NFT.
+
+// IMPORTANT: The current logic of the LunaMint contract currently 
+//  does not permit resale of tokens because any attempt to buy a 
+//  token that already has an owner (i.e. - a non-zero Owner field), 
+//  will trigger an exception.  See the OnNEP17Payment() function.
+
+using System;
 using System.ComponentModel;
 using System.Numerics;
 using Neo;
@@ -145,6 +152,8 @@ namespace AndroidTechnologies
 
         public static ByteString mintLunaToken(string name, string description, string image)
         {
+            var errPrefix = "(mintLunaToken) ";
+
             if (!ValidateContractOwner())
                 throw new Exception("Only the contract owner can mint tokens");
 
@@ -162,7 +171,7 @@ namespace AndroidTechnologies
             // Pass the call on to the NEP11Token.Mint() method.
             Mint(tokenId, tokenState);
 
-            Runtime.Log($"Minted new token('{name}') with ID: {tokenId}.");
+            Runtime.Log($"{errPrefix}Minted new token('{name}') with ID: {tokenId}.");
 
             // Emit an event regarding the new token.
             OnNewLunamintToken(tokenId, name);
@@ -222,14 +231,25 @@ namespace AndroidTechnologies
                 var tokenData = tokenMap[tokenId];
                 if (tokenData == null)
                 {
-                    reportErrorAndThrow($"{errPrefix}: Invalid token id");
+                    reportErrorAndThrow($"{errPrefix}: Invalid token id. Token ID: {tokenId}");
                 }
 
                 var token = (LunaMintsTokenState)StdLib.Deserialize(tokenData);
 
                 if (token.Owner != UInt160.Zero) 
-                    reportErrorAndThrow($"{errPrefix}: Specified token already owned");
+                    reportErrorAndThrow($"{errPrefix}: The specified token already has an owner. Token ID: {tokenId}");
 
+                // Make sure the sender of this transaction (i.e. - the
+                //  "from" parameter) is not trying to buy a token they
+                //  already own.
+                if (token.Owner == from)
+                    reportErrorAndThrow($"{errPrefix}: The sender already owns the specified token. Token ID: {tokenId}");
+
+                // We use the "from" N3 address as the "to" parameter value
+                //  when calling the inherited Transfer() method becaause
+                //  we want to transfer the token from the current owner,
+                //  whoever that is, to the N3 address this transaction
+                //  is being executed for.  (i.e. - the buyer)
                 if (!Transfer(from, tokenId, null)) 
                     reportErrorAndThrow($"{errPrefix}: Transfer Failed");
             }

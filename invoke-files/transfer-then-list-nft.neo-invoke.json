@@ -4,7 +4,7 @@
     "operation": "transfer",
     "args": [
       "#DemoShopContract",
-      0,
+      "0",
       20
     ]
   }
