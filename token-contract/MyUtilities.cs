@@ -63,7 +63,7 @@ namespace AndroidTechnologies
                 /* Neo 3 Preview 5 TestNet */
                 networkName = "Neo 3 Preview 5 TestNet";
             }
-            else if (networkId == 7630401)
+            else
             {
                 /* We assume it is a NEO Express instance. */
                 bIsNeoExpress = true;

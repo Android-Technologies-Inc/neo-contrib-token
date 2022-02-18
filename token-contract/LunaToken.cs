@@ -28,7 +28,7 @@ namespace AndroidTechnologies
 
         // Declare the event name and event.
         [DisplayName("NewTokenCreated")]
-        public static event OnNewLunamintTokenDelegate OnNewLunamintToken;
+        public static event OnNewLunamintTokenDelegate OnNewLunamintToken = default!;
 
         // ----------- END  : EVENTS ----------
 
@@ -124,12 +124,14 @@ namespace AndroidTechnologies
                 //  that have token IDs in their parameter values
                 //  if we modify this smart cotnract.
                 // ByteString data = Runtime.ExecutingScriptHash;
-                ByteString data = UInt160.Zero;
+                ByteString data = (ByteString)"0";
                 if (id is not null)
                     data += id;
-                // return CryptoLib.Sha256(data);                
-                // We don't hash the value if we are running on 
+
+                // We don't hash the value since we are running on 
                 //  a private blockchain.
+                // return CryptoLib.Sha256(data);                
+
                 return data;
             }
             else
@@ -159,6 +161,8 @@ namespace AndroidTechnologies
 
             // Pass the call on to the NEP11Token.Mint() method.
             Mint(tokenId, tokenState);
+
+            Runtime.Log($"Minted new token('{name}') with ID: {tokenId}.");
 
             // Emit an event regarding the new token.
             OnNewLunamintToken(tokenId, name);
