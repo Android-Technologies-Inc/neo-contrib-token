@@ -193,9 +193,46 @@ namespace AndroidTechnologies
             return NEO.Transfer(Runtime.ExecutingScriptHash, to, balance);
         }
 
+        /// <summary>
+        /// Transfer a token with special handling for a private instance
+        ///   of the NEO N3 blockchain (NEO Express).
+        /// </summary>
+        /// <param name="to">The N3 address of the party that should
+        ///  receive ownership of the token.</param>
+        /// <param name="tokenId">The ID of the desired tken.</param>
+        /// <param name="data">The custom data for the call.</param>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
+        /*
+        public static bool MyTransferToken(UInt160 to, ByteString tokenId, object data)
+        {
+            if (to is null || !to.IsValid)
+                throw new Exception("The argument \"to\" is invalid.");
+            StorageMap tokenMap = new(Storage.CurrentContext, Prefix_Token);
+            TokenState token = (TokenState)StdLib.Deserialize(tokenMap[tokenId]);
+            UInt160 from = token.Owner;
+            if (!Runtime.CheckWitness(from)) return false;
+            if (from != to)
+            {
+                token.Owner = to;
+                tokenMap[tokenId] = StdLib.Serialize(token);
+                UpdateBalance(from, tokenId, -1);
+                UpdateBalance(to, tokenId, +1);
+            }
+            PostTransfer(from, to, tokenId, data);
+            return true;
+        }        
+        */
+
         public static void OnNEP17Payment(UInt160 from, BigInteger amount, object data)
         {
-            const string errPrefix = "OnNEP17Payment";
+            const string errPrefix = "(OnNEP17Payment) ";
+
+            // TODO: REMOVE THIS!  Testing CheckWitness() from within 
+            if (Runtime.CheckWitness(from))
+                Runtime.Log($"{errPrefix} CheckWitness SUCCEEDED at the top of this call.");
+            else
+                Runtime.Log($"{errPrefix} CheckWitness FAILED at the top of this call.");
 
             if (data != null)
             {
@@ -250,8 +287,11 @@ namespace AndroidTechnologies
                 //  we want to transfer the token from the current owner,
                 //  whoever that is, to the N3 address this transaction
                 //  is being executed for.  (i.e. - the buyer)
+
+                // If we are running on a private blockchain, we use our own
+                //  transfer method that does not execute 
                 if (!Transfer(from, tokenId, null)) 
-                    reportErrorAndThrow($"{errPrefix}: Transfer Failed");
+                    reportErrorAndThrow($"{errPrefix}: Transfer Failed.  Check permissions scopes.");
             }
         }
 

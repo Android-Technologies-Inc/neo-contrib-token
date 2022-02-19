@@ -28,17 +28,9 @@ namespace AndroidTechnologies
             var networkId = Runtime.GetNetwork();
             var networkName = "NEO Express";
 
-            if (networkId == 7630401)
-            {
-                /* Neo 2 MainNet */
-                networkName = "Neo 2 MainNet";
-            }
-            else if (networkId == 1953787457)
-            {
-                /* Neo 2 TestNet */
-                networkName = "Neo 2 TestNet";
-            }
-            else if (networkId == 860833102)
+            // Do the main net check first so we minimize
+            //  GAS usage when it counts the most.
+            if (networkId == 860833102)
             {
                 /* Neo 3 MainNet */
                 networkName = "Neo 3 MainNet";
@@ -47,6 +39,16 @@ namespace AndroidTechnologies
             {
                 /* Neo 3 TestNet */
                 networkName = "Neo 3 TestNet";
+            }
+            else if (networkId == 7630401)
+            {
+                /* Neo 2 MainNet */
+                networkName = "Neo 2 MainNet";
+            }
+            else if (networkId == 1953787457)
+            {
+                /* Neo 2 TestNet */
+                networkName = "Neo 2 TestNet";
             }
             else if (networkId == 844378958)
             {

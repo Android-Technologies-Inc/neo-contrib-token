@@ -32,11 +32,31 @@ contract invoke ./invoke-files/transfer-then-list-nft.neo-invoke.json alice
 checkpoint create ./checkpoints/token-listed -f
 
 # Test Alice buying the Da Hongfei NFT.
-contract invoke ./invoke-files/buy-nft.neo-invoke.json alice
+#   
+# We need the Global scope or the CheckWitness() call in the Nep11Token
+#  class the LunaToken contract inherits will fail when we call its 
+#  Transfer() method to complete a token transfer/purchase from within 
+#  our OnNEP17Payment() method.  We are using GAS for NFT payments.
+#  Therefore, an NFT tranfer/purchase begins with a call to the 
+#  Transfer() method in the GasToken contract.  Without the 
+#  Global scope the GasToken contract will not have permission 
+#  to execute a transfer within the LunaToken contract.
+#
+# WARNING: Only use Global scope when using a private instance 
+#  of a blockchain!  The Global scope is dangerous in the context 
+#  of the MainNet or any other production execution context.
+#  Instead, and only when absolutely necessary, use NEO N3's
+#  allowed contracts feature or other tightly restricted
+#  custom permissions scope!
+contract invoke ./invoke-files/buy-nft.neo-invoke.json alice --witness-scope Global
+
 # Create a new checkpoint.
 checkpoint create ./checkpoints/token-bought -f
 
-contract invoke ./invoke-files/list-nft.neo-invoke.json alice
+# List the NFTs available for sale.  We have to transfer the 
+#  token to the DemoShopContract contract before we can list 
+#  it since that contract is the sales agent.
+contract invoke ./invoke-files/transfer-then-list-nft.neo-invoke.json alice
 # Create a new checkpoint.
 checkpoint create ./checkpoints/token-listed -f
 
