@@ -36,33 +36,6 @@ namespace AndroidTechnologies
         /// </summary>
         const int SALE_TYPE_AUCTION_STANDARD = 1;
 
-        /// <summary>
-        /// Convert a sale type numeric value to a human
-        ///  friendly string.
-        ///  
-        /// IMPORTANT: When new sale types are added this
-        ///  function should be updated to accomodate them!
-        /// </summary>
-        /// <param name="saleType">A sales type numeric value.</param>
-        /// <returns>Returns a string representation of the
-        ///  given sales type.</returns>
-        public string SaleTypeToString(BigInteger saleType) 
-        {
-            if (saleType == (BigInteger) SALE_TYPE_FIXED_PRICE)
-                return "fixed price";
-            if (saleType == (BigInteger) SALE_TYPE_AUCTION_STANDARD)
-                return "standard auction";
-
-            reportErrorAndThrow($"({nameof(SaleTypeToString)}) Invalid sale type: {saleType.ToString()}");
-
-            // Note, this statement is never reachd, but currently
-            //  the compiler can't detect that reportErrorAndThrow()
-            //  always throws an exception, so we add it to facilitate
-            //  compilation.
-            return "(unknown sale type)";
-        }
-
-
         // ----------- END  : CONSTANTS ----------
 
         // ----------- BEGIN: EVENTS ----------
@@ -92,6 +65,50 @@ namespace AndroidTechnologies
         {
             Runtime.Log(errMsg);
             throw new Exception(errMsg);
+        }
+
+        /// <summary>
+        /// Validate a sale type value.
+        ///  
+        /// IMPORTANT: When new sale types are added this
+        ///  function should be updated to accomodate them!
+        /// </summary>
+        /// <param name="saleType">A sales type numeric value.</param>
+        /// <returns>Returns TRUE if the sale type is valid, 
+        ///  otherwise FALSE.</returns>
+        public bool isValidSaleType(BigInteger saleType)
+        {
+            if (saleType == (BigInteger) SALE_TYPE_FIXED_PRICE)
+                return true;
+            if (saleType == (BigInteger) SALE_TYPE_AUCTION_STANDARD)
+                return true;
+            return false;
+        }
+
+        /// <summary>
+        /// Convert a sale type numeric value to a human
+        ///  friendly string.
+        ///  
+        /// IMPORTANT: When new sale types are added this
+        ///  function should be updated to accomodate them!
+        /// </summary>
+        /// <param name="saleType">A sales type numeric value.</param>
+        /// <returns>Returns a string representation of the
+        ///  given sales type.</returns>
+        public string SaleTypeToString(BigInteger saleType) 
+        {
+            if (saleType == (BigInteger) SALE_TYPE_FIXED_PRICE)
+                return "fixed price";
+            if (saleType == (BigInteger) SALE_TYPE_AUCTION_STANDARD)
+                return "standard auction";
+
+            reportErrorAndThrow($"({nameof(SaleTypeToString)}) Invalid sale type: {saleType.ToString()}");
+
+            // Note, this statement is never reached, but currently
+            //  the compiler can't detect that reportErrorAndThrow()
+            //  always throws an exception, so we add it to facilitate
+            //  compilation.
+            return "(unknown sale type)";
         }
 
         /*
@@ -309,15 +326,30 @@ namespace AndroidTechnologies
             // Get a reference to the current transaction.
             var tx = (Transaction)Runtime.ScriptContainer;
 
-            // Only the token owner or the contract owner can change the for sale status
+            // Only the token owner or the contract owner can change the for-sale status
             //  of a token.
             if (tx.Sender == tokenState.Owner && Runtime.CheckWitness(tx.Sender)) 
                 reportErrorAndThrow($"({nameof(ListTokenForSale)}) Only the token owner or the contract owner can make a token eligible for sale");
 
-            // Mark the token as eligible for sale and update storage.
-            tokenState.isForSale = true;
+            // Validate the sale type.
+            if (!isValidSaleType(saleType))
+                reportErrorAndThrow($"({nameof(ListTokenForSale)}) Invalid sale type: {saleType.ToString()}");
 
-?????????????????????????????????????????????
+            // Negative prices are not allowed.
+            if (saleOrMinimumPrice < 0)
+                reportErrorAndThrow($"({nameof(ListTokenForSale)}) The saleOrMinimumPrice parameter is negative.");
+
+
+            // Mark the token as eligible for sale, update the
+            //  relevant token fields, and then update storage.
+            tokenState.isForSale = true;
+            tokenState.saleType = saleType;
+            tokenState.saleOrMinimumPrice = saleOrMinimumPrice;
+            tokenState.allowedBuyer = allowedBuyer;
+
+            StorageMap tokenMap = new(Storage.CurrentContext, Prefix_Token);
+
+            tokenMap[tokenId] = StdLib.Serialize(tokenState);
         }
 
         /// <summary>
@@ -390,9 +422,7 @@ namespace AndroidTechnologies
                 StorageMap tokenMap = new(Storage.CurrentContext, Prefix_Token);
                 var tokenData = tokenMap[tokenId];
                 if (tokenData == null)
-                {
                     reportErrorAndThrow($"({nameof(OnNEP17Payment)}): Invalid token id. Token ID: {tokenId}");
-                }
 
                 var token = (LunaMintsTokenState)StdLib.Deserialize(tokenData);
 
@@ -453,7 +483,7 @@ namespace AndroidTechnologies
         ///  the contract owner.
         /// </summary>
         /// <returns>Returns the N3 address of the contract owner.s</returns>
-        protected UInt160 GetContractOwner() {
+        protected static UInt160 GetContractOwner() {
             var key = new byte[] { Prefix_ContractOwner };
 
             return  (UInt160)Storage.Get(Storage.CurrentContext, key);
@@ -464,7 +494,7 @@ namespace AndroidTechnologies
         /// </summary>
         /// <returns>Returns TRUE if the contract has a
         ///   valid owner, FALSE if not.</returns>
-        protected bool ValidateContractOwner()
+        protected static bool ValidateContractOwner()
         {
             var contractOwner = GetContractOwner();
             var tx = (Transaction)Runtime.ScriptContainer;
