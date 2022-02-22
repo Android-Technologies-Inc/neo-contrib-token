@@ -1,5 +1,7 @@
 // This module contains some helpful utility code used
 //  in NEO N3 smart contract work.
+using System;
+using Neo;
 using Neo.SmartContract.Framework.Services;
 
 #nullable enable
@@ -9,6 +11,17 @@ namespace AndroidTechnologies
 
     public static class MyUtilities
     {
+        /// <summary>
+        /// Simple function to both log and then throw and Exception
+        ///     using the given error message.
+        /// </summary>
+        /// <param name="errMsg">An error message.</param>
+        public static void ReportErrorAndThrow(string errMsg)
+        {
+            Runtime.Log(errMsg);
+            throw new Exception(errMsg);
+        }
+
         /// <summary>
         /// This function checks to see if we are currently
         ///  executing on a NEO Express network instance.
@@ -21,7 +34,7 @@ namespace AndroidTechnologies
         /// <returns>Returns TRUE if the current network we 
         ///  are executing is (allegedly) a NEO Express
         ///  instance, FALSE if not.</returns>
-        public static bool isNeoExpress()
+        public static bool IsNeoExpress()
         {
             bool bIsNeoExpress = false;
 
@@ -73,6 +86,38 @@ namespace AndroidTechnologies
 
             Runtime.Log($"CURRENT NEO NETWORK: {networkName} ");
             return bIsNeoExpress;
+        }
+
+        /// <summary>
+        /// Helper function that returns TRUE if a UInt160 value
+        ///  contains anything but the default empty value.
+        ///  FALSE otherwise.
+        /// </summary>
+        /// <param name="uiValue">The value to inspect.</param>
+        /// <returns>Returns TRUE if the UInt160 value is
+        ///  empty, FALSE if not.</returns>
+        public static bool IsEmptyUInt160(UInt160 uiValue) {
+            return uiValue == UInt160.Zero;
+        }
+
+        /// <summary>
+        /// Validates the transaction sender and the makes sure
+        ///  that it is equal to the given token owner value.
+        /// </summary>
+        /// <param name="tokenOwner">The current owner of 
+        ///  a token.</param>
+        /// <returns>Returns TRUE if the transaction sender
+        ///  passes a CheckWitness() check and is equal
+        ///  to the value given in the tokenOwner parameter.</returns>
+        public static bool IsSenderTokenOwner(UInt160 tokenOwner)
+        {
+            if (IsEmptyUInt160(tokenOwner))
+                ReportErrorAndThrow($"({nameof(IsSenderTokenOwner)}) The token owner parameter is empty.");
+
+            // Get a reference to the current transaction.
+            var tx = (Transaction)Runtime.ScriptContainer;
+
+            return (tx.Sender == tokenOwner && Runtime.CheckWitness(tx.Sender));
         }
     } // class MyUtilities
 }

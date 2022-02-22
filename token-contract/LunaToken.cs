@@ -57,17 +57,6 @@ namespace AndroidTechnologies
         //  a player or a band after a recently finished game.
 
         /// <summary>
-        /// Simple function to both log and then throw and Exception
-        ///     using the given error message.
-        /// </summary>
-        /// <param name="errMsg">An error message.</param>
-        private static void reportErrorAndThrow(string errMsg)
-        {
-            Runtime.Log(errMsg);
-            throw new Exception(errMsg);
-        }
-
-        /// <summary>
         /// Validate a sale type value.
         ///  
         /// IMPORTANT: When new sale types are added this
@@ -76,7 +65,7 @@ namespace AndroidTechnologies
         /// <param name="saleType">A sales type numeric value.</param>
         /// <returns>Returns TRUE if the sale type is valid, 
         ///  otherwise FALSE.</returns>
-        public bool isValidSaleType(BigInteger saleType)
+        public static bool IsValidSaleType(BigInteger saleType)
         {
             if (saleType == (BigInteger) SALE_TYPE_FIXED_PRICE)
                 return true;
@@ -102,10 +91,10 @@ namespace AndroidTechnologies
             if (saleType == (BigInteger) SALE_TYPE_AUCTION_STANDARD)
                 return "standard auction";
 
-            reportErrorAndThrow($"({nameof(SaleTypeToString)}) Invalid sale type: {saleType.ToString()}");
+            MyUtilities.ReportErrorAndThrow($"({nameof(SaleTypeToString)}) Invalid sale type: {saleType.ToString()}");
 
             // Note, this statement is never reached, but currently
-            //  the compiler can't detect that reportErrorAndThrow()
+            //  the compiler can't detect that MyUtilities.reportErrorAndThrow()
             //  always throws an exception, so we add it to facilitate
             //  compilation.
             return "(unknown sale type)";
@@ -169,11 +158,16 @@ namespace AndroidTechnologies
         /// <param name="tokenId">The ID of the desired token.</param>
         /// <returns>Returns a map object containing the desired token's
         ///  metadata (field values).</returns>
-        protected LunaMintsTokenState GetTokenMetadata(ByteString tokenId) {
+        private static LunaMintsTokenState GetTokenMetadata(ByteString tokenId) {
             StorageMap tokenMap = new(Storage.CurrentContext, Prefix_Token);
 
+            var tokenState = tokenMap[tokenId];
+
+            if (tokenState == null)
+                MyUtilities.ReportErrorAndThrow($"({nameof(GetTokenMetadata)}) Invalid token ID: {tokenId}");
+
             // Get the desired token's meta-data.
-            return (LunaMintsTokenState)StdLib.Deserialize(tokenMap[tokenId]);
+            return (LunaMintsTokenState)StdLib.Deserialize(tokenState);
         }
 
         /// <summary>
@@ -219,7 +213,7 @@ namespace AndroidTechnologies
             //  method found in the Nep11Token class we
             //  inherit from, that does use the script hash
             //  to build the token ID.
-            if (MyUtilities.isNeoExpress()) {
+            if (MyUtilities.IsNeoExpress()) {
                 StorageContext context = Storage.CurrentContext;
                 byte[] key = new byte[] { Prefix_TokenId };
                 ByteString id = Storage.Get(context, key);
@@ -298,7 +292,9 @@ namespace AndroidTechnologies
         }
 
         /// <summary>
-        /// Mark a token as eligible for sale.
+        /// Mark a token as eligible for sale and optionally
+        ///  set the sales type and sale/minimum-price
+        ///  values too for a token's sale.
         /// </summary>
         /// <param name="tokenId">The ID of the token to mark
         ///  as eligible for sale.</param>
@@ -311,7 +307,7 @@ namespace AndroidTechnologies
         ///  <param name="saleOrMinimumPrice">The price for the
         ///  token if it is a fixed price sale, or the reserve
         ///  (minimum) price if it is to be sold in an auction.
-        public void ListTokenForSale(ByteString tokenId, UInt160 allowedBuyer, BigInteger saleType, BigInteger saleOrMinimumPrice) {
+        public static void ListTokenForSale(ByteString tokenId, UInt160 allowedBuyer, BigInteger saleType, BigInteger saleOrMinimumPrice) {
             // Get the token's meta-data.  This also serves to
             //  validate the token ID since the Map() method
             //  will throw an Exception if it can't find the
@@ -321,23 +317,23 @@ namespace AndroidTechnologies
             // If the owner is empty, then we could not find a token
             //  with the desired ID.
             if (tokenState.Owner == UInt160.Zero)
-                reportErrorAndThrow($"({nameof(ListTokenForSale)}) Invalid token ID: {tokenId}");
+                MyUtilities.ReportErrorAndThrow($"({nameof(ListTokenForSale)}) Invalid token ID: {tokenId}");
 
             // Get a reference to the current transaction.
             var tx = (Transaction)Runtime.ScriptContainer;
 
-            // Only the token owner or the contract owner can change the for-sale status
+            // Only the token owner can change the for-sale status
             //  of a token.
-            if (tx.Sender == tokenState.Owner && Runtime.CheckWitness(tx.Sender)) 
-                reportErrorAndThrow($"({nameof(ListTokenForSale)}) Only the token owner or the contract owner can make a token eligible for sale");
+            if (!MyUtilities.IsSenderTokenOwner(tokenState.Owner))
+                MyUtilities.ReportErrorAndThrow($"({nameof(ListTokenForSale)}) Only the token owner can make a token eligible for sale");
 
             // Validate the sale type.
             if (!isValidSaleType(saleType))
-                reportErrorAndThrow($"({nameof(ListTokenForSale)}) Invalid sale type: {saleType.ToString()}");
+                MyUtilities.ReportErrorAndThrow($"({nameof(ListTokenForSale)}) Invalid sale type: {saleType.ToString()}");
 
             // Negative prices are not allowed.
             if (saleOrMinimumPrice < 0)
-                reportErrorAndThrow($"({nameof(ListTokenForSale)}) The saleOrMinimumPrice parameter is negative.");
+                MyUtilities.ReportErrorAndThrow($"({nameof(ListTokenForSale)}) The saleOrMinimumPrice parameter is negative.");
 
 
             // Mark the token as eligible for sale, update the
@@ -363,9 +359,9 @@ namespace AndroidTechnologies
         public static bool Withdraw(UInt160 to)
         {
             if (!ValidateContractOwner()) 
-                reportErrorAndThrow($"({nameof(Withdraw)}) Only the contract owner can withdraw GAS");
+                MyUtilities.ReportErrorAndThrow($"({nameof(Withdraw)}) Only the contract owner can withdraw GAS");
             if (to == UInt160.Zero || !to.IsValid) 
-                reportErrorAndThrow($"({nameof(Withdraw)}) Invalid withrdrawal address");
+                MyUtilities.ReportErrorAndThrow($"({nameof(Withdraw)}) Invalid withrdrawal address");
 
             var balance = GAS.BalanceOf(Runtime.ExecutingScriptHash);
             if (balance <= 0) 
@@ -386,7 +382,7 @@ namespace AndroidTechnologies
         ///  with the transfer/payment.</param>
         public static void OnNEP17Payment(UInt160 from, BigInteger amount, object data)
         {
-            // TODO: REMOVE THIS!  Testing CheckWitness() from within 
+            // TODO: REMOVE THIS!  Testing CheckWitness() from within this method.
             if (Runtime.CheckWitness(from))
                 Runtime.Log($"({nameof(OnNEP17Payment)}) CheckWitness SUCCEEDED at the top of this call.");
             else
@@ -411,29 +407,24 @@ namespace AndroidTechnologies
                     // TODO: Mention the (addr) cast for viewing script hashes
                     //  as string instead of an array of hex bytes.
                     logSideBySideHashDisplay(Runtime.CallingScriptHash, GAS.Hash);
-                    reportErrorAndThrow($"({nameof(OnNEP17Payment)}): Invalid script hash");
+                    MyUtilities.ReportErrorAndThrow($"({nameof(OnNEP17Payment)}): Invalid script hash");
                 }
 
                 if (amount < 1)  
-                    reportErrorAndThrow($"({nameof(OnNEP17Payment)}): Insufficient payment amount");
+                    MyUtilities.ReportErrorAndThrow($"({nameof(OnNEP17Payment)}): Insufficient payment amount");
                 if (amount > 2) 
-                    reportErrorAndThrow($"({nameof(OnNEP17Payment)}): Payment amount is too large");
+                    MyUtilities.ReportErrorAndThrow($"({nameof(OnNEP17Payment)}): Payment amount is too large");
 
-                StorageMap tokenMap = new(Storage.CurrentContext, Prefix_Token);
-                var tokenData = tokenMap[tokenId];
-                if (tokenData == null)
-                    reportErrorAndThrow($"({nameof(OnNEP17Payment)}): Invalid token id. Token ID: {tokenId}");
+                var tokenState = GetTokenMetadata(tokenId);
 
-                var token = (LunaMintsTokenState)StdLib.Deserialize(tokenData);
-
-                if (token.Owner != UInt160.Zero) 
-                    reportErrorAndThrow($"({nameof(OnNEP17Payment)}): The specified token already has an owner. Token ID: {tokenId}");
+                if (tokenState.Owner != UInt160.Zero) 
+                    MyUtilities.ReportErrorAndThrow($"({nameof(OnNEP17Payment)}): The specified token already has an owner. Token ID: {tokenId}");
 
                 // Make sure the sender of this transaction (i.e. - the
                 //  "from" parameter) is not trying to buy a token they
                 //  already own.
-                if (token.Owner == from)
-                    reportErrorAndThrow($"({nameof(OnNEP17Payment)}): The sender already owns the specified token. Token ID: {tokenId}");
+                if (tokenState.Owner == from)
+                    MyUtilities.ReportErrorAndThrow($"({nameof(OnNEP17Payment)}): The sender already owns the specified token. Token ID: {tokenId}");
 
                 // We use the "from" N3 address as the "to" parameter value
                 //  when calling the inherited Transfer() method becaause
@@ -444,8 +435,31 @@ namespace AndroidTechnologies
                 // If we are running on a private blockchain, we use our own
                 //  transfer method that does not execute 
                 if (!Transfer(from, tokenId, null)) 
-                    reportErrorAndThrow($"({nameof(OnNEP17Payment)}): Transfer Failed.  Check permissions scopes.");
+                    MyUtilities.ReportErrorAndThrow($"({nameof(OnNEP17Payment)}): Transfer Failed.  Check permissions scopes.");
             }
+        }
+
+        /// <summary>
+        /// This method was created specifically to allow a token owner
+        ///  to transfer a token to another party, with the GAS fees
+        ///  paid by the token owner.  Only the token owner can
+        ///  make the transfer.
+        /// </summary>
+        /// <param name="tokenId">The ID of the token to transfer.</param>
+        /// <param name="to">The N3 address to transfer ownership 
+        /// of the token to.</param>
+        public static void OwnerInitiatedTransfer(ByteString tokenId, UInt160 to)
+        {
+            if (MyUtilities.IsEmptyUInt160(to))
+                MyUtilities.ReportErrorAndThrow($"({nameof(OwnerInitiatedTransfer)}): The address to transfer the token to must not be empty.");
+
+            // Find the token metadata object for the given token ID.
+            StorageMap tokenMap = new(Storage.CurrentContext, Prefix_Token);
+
+            var tokenState = GetTokenMetadata(tokenId);
+
+            if (!MyUtilities.IsSenderTokenOwner(tokenState.Owner))
+                MyUtilities.ReportErrorAndThrow($"({nameof(OwnerInitiatedTransfer)}): Only the token owner can can execute this method.");
         }
 
         /// <summary>
