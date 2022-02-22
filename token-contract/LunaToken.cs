@@ -25,6 +25,46 @@ namespace AndroidTechnologies
     // public class LunaToken : Nep11Token<LunaMintsTokenState>
     public class LunaToken : Nep11Token<LunaMintsTokenState>
     {
+        // ----------- BEGIN: CONSTANTS ----------
+        
+        /// <summary>
+        /// Numeric constant that identifies fixed price token sales.
+        /// </summary>
+        const int SALE_TYPE_FIXED_PRICE = 0;
+        /// <summary>
+        /// Numeric constant that identifies token auctions.
+        /// </summary>
+        const int SALE_TYPE_AUCTION_STANDARD = 1;
+
+        /// <summary>
+        /// Convert a sale type numeric value to a human
+        ///  friendly string.
+        ///  
+        /// IMPORTANT: When new sale types are added this
+        ///  function should be updated to accomodate them!
+        /// </summary>
+        /// <param name="saleType">A sales type numeric value.</param>
+        /// <returns>Returns a string representation of the
+        ///  given sales type.</returns>
+        public string SaleTypeToString(BigInteger saleType) 
+        {
+            if (saleType == (BigInteger) SALE_TYPE_FIXED_PRICE)
+                return "fixed price";
+            if (saleType == (BigInteger) SALE_TYPE_AUCTION_STANDARD)
+                return "standard auction";
+
+            reportErrorAndThrow($"({nameof(SaleTypeToString)}) Invalid sale type: {saleType.ToString()}");
+
+            // Note, this statement is never reachd, but currently
+            //  the compiler can't detect that reportErrorAndThrow()
+            //  always throws an exception, so we add it to facilitate
+            //  compilation.
+            return "(unknown sale type)";
+        }
+
+
+        // ----------- END  : CONSTANTS ----------
+
         // ----------- BEGIN: EVENTS ----------
 
         // These are the events emitted by this smart contract.
@@ -249,7 +289,12 @@ namespace AndroidTechnologies
         ///  is provided, then only the user/contract with
         ///  that N3 address can buy the token (exlusive
         ///  sale/transfer).</param>
-        public void ListTokenForSale(ByteString tokenId, UInt160 allowedBuyer) {
+        ///  <param name="saleType">A sale type identifier
+        ///  that indicates how the token should be sold.</param>
+        ///  <param name="saleOrMinimumPrice">The price for the
+        ///  token if it is a fixed price sale, or the reserve
+        ///  (minimum) price if it is to be sold in an auction.
+        public void ListTokenForSale(ByteString tokenId, UInt160 allowedBuyer, BigInteger saleType, BigInteger saleOrMinimumPrice) {
             // Get the token's meta-data.  This also serves to
             //  validate the token ID since the Map() method
             //  will throw an Exception if it can't find the

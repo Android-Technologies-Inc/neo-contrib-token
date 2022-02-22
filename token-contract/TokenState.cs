@@ -1,6 +1,7 @@
 // This module contains the classes that carries the property fields
 //  for the NFTs we create.
 
+using System.Numerics;
 using Neo;
 
 #nullable enable
@@ -40,5 +41,21 @@ namespace AndroidTechnologies
         ///  contract.
         /// </summary>
         public UInt160 allowedBuyer = UInt160.Zero;
+
+        /// <summary>
+        /// If a token has been listed for sale, then
+        ///  this field tells us how it should be listed
+        ///  for sale (e.g. - auction, fixed price, etc.)
+        /// </summary>
+        public BigInteger saleType = 0;
+
+        /// <summary>
+        /// If a token has been listed for sale, this 
+        ///  field should contain the price that the token
+        ///  should be sold for (fixed price sale) or the
+        ///  minimum price it should be sold for if it is
+        ///  being auctioned off (i.e. - reserve price).
+        /// </summary>
+        public BigInteger saleOrMinimumPrice = 0;
     }
 }
