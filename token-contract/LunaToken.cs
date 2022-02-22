@@ -1,10 +1,5 @@
 ﻿// This is the smart contract for the LunaMint NFT.
 
-// IMPORTANT: The current logic of the LunaMint contract currently 
-//  does not permit resale of tokens because any attempt to buy a 
-//  token that already has an owner (i.e. - a non-zero Owner field), 
-//  will trigger an exception.  See the OnNEP17Payment() function.
-
 using System;
 using System.ComponentModel;
 using System.Numerics;
@@ -328,7 +323,7 @@ namespace AndroidTechnologies
                 MyUtilities.ReportErrorAndThrow($"({nameof(ListTokenForSale)}) Only the token owner can make a token eligible for sale");
 
             // Validate the sale type.
-            if (!isValidSaleType(saleType))
+            if (!IsValidSaleType(saleType))
                 MyUtilities.ReportErrorAndThrow($"({nameof(ListTokenForSale)}) Invalid sale type: {saleType.ToString()}");
 
             // Negative prices are not allowed.
@@ -416,9 +411,6 @@ namespace AndroidTechnologies
                     MyUtilities.ReportErrorAndThrow($"({nameof(OnNEP17Payment)}): Payment amount is too large");
 
                 var tokenState = GetTokenMetadata(tokenId);
-
-                if (tokenState.Owner != UInt160.Zero) 
-                    MyUtilities.ReportErrorAndThrow($"({nameof(OnNEP17Payment)}): The specified token already has an owner. Token ID: {tokenId}");
 
                 // Make sure the sender of this transaction (i.e. - the
                 //  "from" parameter) is not trying to buy a token they

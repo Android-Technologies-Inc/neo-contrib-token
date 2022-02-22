@@ -58,6 +58,6 @@ checkpoint create ./checkpoints/token-bought -f
 #  it since that contract is the sales agent.
 contract invoke ./invoke-files/transfer-then-list-nft.neo-invoke.json alice
 # Create a new checkpoint.
-checkpoint create ./checkpoints/token-listed -f
+checkpoint create ./checkpoints/token-listed-2 -f
 
 # Done.
