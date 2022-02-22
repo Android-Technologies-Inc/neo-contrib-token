@@ -112,12 +112,25 @@ namespace AndroidTechnologies
         /// <param name="tokenId">The ID of the desired token.</param>
         /// <returns>Returns a map object containing the desired token's
         ///  metadata (field values).</returns>
+        protected LunaMintsTokenState GetTokenMetadata(ByteString tokenId) {
+            StorageMap tokenMap = new(Storage.CurrentContext, Prefix_Token);
+
+            // Get the desired token's meta-data.
+            return (LunaMintsTokenState)StdLib.Deserialize(tokenMap[tokenId]);
+        }
+
+        /// <summary>
+        /// Get a token's property values.
+        /// </summary>
+        /// <param name="tokenId">The ID of the desired token.</param>
+        /// <returns>Returns a map object containing the desired token's
+        ///  metadata (field values).</returns>
         [Safe]
         public override Map<string, object> Properties(ByteString tokenId)
         {
-            StorageMap tokenMap = new(Storage.CurrentContext, Prefix_Token);
-            LunaMintsTokenState token = (LunaMintsTokenState)StdLib.Deserialize(tokenMap[tokenId]);
             Map<string, object> map = new();
+
+            var token = GetTokenMetadata(tokenId);
 
             // Even though the "owner" and "name" fields reside in the 
             //  Neo.SmartContract.Framework.Nep11TokenState class inherited
@@ -127,6 +140,8 @@ namespace AndroidTechnologies
             map["name"] = token.Name;
             map["description"] = token.Description;
             map["image_url"] = token.ImageUrl;
+            map["is_for_sale"] = token.isForSale;
+            map["allowed_buyer"] = token.allowedBuyer;
 
             return map;
         }
@@ -183,14 +198,13 @@ namespace AndroidTechnologies
         /// <param name="description">A short description of the token.</param>
         /// <param name="imageUrl">The image URL, if applicable.</param>
         /// <returns></returns>
-        public static ByteString mintLunaToken(string name, string description, string imageUrl)
+        public static ByteString MintLunaToken(string name, string description, string imageUrl)
         {
-            var errPrefix = "(mintLunaToken) ";
+            // Only the contract owner 
+            // if (!ValidateContractOwner())
+            //    throw new Exception("Only the contract owner can mint tokens");
 
-            if (!ValidateContractOwner())
-                throw new Exception("Only the contract owner can mint tokens");
-
-            // Generate new token ID.
+            // Generate a new token ID.
             var tokenId = MyNewTokenId();
 
             // Get a reference to the current transaction.
@@ -206,17 +220,59 @@ namespace AndroidTechnologies
                 Name = name,
                 Description = description,
                 ImageUrl = imageUrl,
+                // The token is not initially for sale.  The
+                //  owner has to mark it that way using the
+                //  ListTokenForSale() method.
+                isForSale = false,
+                // The allowed buyer (exclusive sale) is initially
+                //  empty.
+                allowedBuyer = UInt160.Zero
             };
 
             // Pass the call on to the NEP11Token.Mint() method.
             Mint(tokenId, tokenState);
 
-            Runtime.Log($"{errPrefix}Minted new token('{name}') with ID: {tokenId}.");
+            Runtime.Log($"{nameof(MintLunaToken)}Minted new token('{name}') with ID: {tokenId}.");
 
             // Emit an event regarding the new token.
             OnNewLunamintToken(tokenId, name);
 
             return tokenId;
+        }
+
+        /// <summary>
+        /// Mark a token as eligible for sale.
+        /// </summary>
+        /// <param name="tokenId">The ID of the token to mark
+        ///  as eligible for sale.</param>
+        /// <param name="allowedBuyer">If a non-empty value
+        ///  is provided, then only the user/contract with
+        ///  that N3 address can buy the token (exlusive
+        ///  sale/transfer).</param>
+        public void ListTokenForSale(ByteString tokenId, UInt160 allowedBuyer) {
+            // Get the token's meta-data.  This also serves to
+            //  validate the token ID since the Map() method
+            //  will throw an Exception if it can't find the
+            //  token in our StorageMap for them.
+            LunaMintsTokenState tokenState = GetTokenMetadata(tokenId);
+
+            // If the owner is empty, then we could not find a token
+            //  with the desired ID.
+            if (tokenState.Owner == UInt160.Zero)
+                reportErrorAndThrow($"({nameof(ListTokenForSale)}) Invalid token ID: {tokenId}");
+
+            // Get a reference to the current transaction.
+            var tx = (Transaction)Runtime.ScriptContainer;
+
+            // Only the token owner or the contract owner can change the for sale status
+            //  of a token.
+            if (tx.Sender == tokenState.Owner && Runtime.CheckWitness(tx.Sender)) 
+                reportErrorAndThrow($"({nameof(ListTokenForSale)}) Only the token owner or the contract owner can make a token eligible for sale");
+
+            // Mark the token as eligible for sale and update storage.
+            tokenState.isForSale = true;
+
+?????????????????????????????????????????????
         }
 
         /// <summary>
@@ -227,12 +283,12 @@ namespace AndroidTechnologies
         ///  GAS to.</param>
         /// <returns>Returns TRUE if a transfer was executed.  FALSE
         ///   if not, because there is nothing to transfer.</returns>
-        public bool Withdraw(UInt160 to)
+        public static bool Withdraw(UInt160 to)
         {
             if (!ValidateContractOwner()) 
-                throw new Exception("Only the contract owner can withdraw GAS");
+                reportErrorAndThrow($"({nameof(Withdraw)}) Only the contract owner can withdraw GAS");
             if (to == UInt160.Zero || !to.IsValid) 
-                throw new Exception("Invalid withrdrawal address");
+                reportErrorAndThrow($"({nameof(Withdraw)}) Invalid withrdrawal address");
 
             var balance = GAS.BalanceOf(Runtime.ExecutingScriptHash);
             if (balance <= 0) 
@@ -253,26 +309,24 @@ namespace AndroidTechnologies
         ///  with the transfer/payment.</param>
         public static void OnNEP17Payment(UInt160 from, BigInteger amount, object data)
         {
-            const string errPrefix = "(OnNEP17Payment) ";
-
             // TODO: REMOVE THIS!  Testing CheckWitness() from within 
             if (Runtime.CheckWitness(from))
-                Runtime.Log($"{errPrefix} CheckWitness SUCCEEDED at the top of this call.");
+                Runtime.Log($"({nameof(OnNEP17Payment)}) CheckWitness SUCCEEDED at the top of this call.");
             else
-                Runtime.Log($"{errPrefix} CheckWitness FAILED at the top of this call.");
+                Runtime.Log($"({nameof(OnNEP17Payment)}) CheckWitness FAILED at the top of this call.");
 
             if (data != null)
             {
                 var tokenId = (ByteString)data;
 
                 if (Runtime.CallingScriptHash == GAS.Hash)
-                    Runtime.Log($"{errPrefix} The GAS contract is calling us.");
+                    Runtime.Log($"({nameof(OnNEP17Payment)}) The GAS contract is calling us.");
                 else if (Runtime.CallingScriptHash == NEO.Hash)
-                    Runtime.Log($"{errPrefix} The NEO contract is calling us.");
+                    Runtime.Log($"({nameof(OnNEP17Payment)}) The NEO contract is calling us.");
                 else if (Runtime.CallingScriptHash == Runtime.CallingScriptHash)
-                    Runtime.Log($"{errPrefix} The LunaToken contract is calling itself.");
+                    Runtime.Log($"({nameof(OnNEP17Payment)}) The LunaToken contract is calling itself.");
                 else
-                    Runtime.Log($"{errPrefix} Unknown N3 address is calling us");
+                    Runtime.Log($"({nameof(OnNEP17Payment)}) Unknown N3 address is calling us");
 
                 // We only accept NEO gas payments.
                 if (Runtime.CallingScriptHash != GAS.Hash)
@@ -280,31 +334,31 @@ namespace AndroidTechnologies
                     // TODO: Mention the (addr) cast for viewing script hashes
                     //  as string instead of an array of hex bytes.
                     logSideBySideHashDisplay(Runtime.CallingScriptHash, GAS.Hash);
-                    reportErrorAndThrow($"{errPrefix}: Invalid script hash");
+                    reportErrorAndThrow($"({nameof(OnNEP17Payment)}): Invalid script hash");
                 }
 
                 if (amount < 1)  
-                    reportErrorAndThrow($"{errPrefix}: Insufficient payment amount");
+                    reportErrorAndThrow($"({nameof(OnNEP17Payment)}): Insufficient payment amount");
                 if (amount > 2) 
-                    reportErrorAndThrow($"{errPrefix}: Payment amount is too large");
+                    reportErrorAndThrow($"({nameof(OnNEP17Payment)}): Payment amount is too large");
 
                 StorageMap tokenMap = new(Storage.CurrentContext, Prefix_Token);
                 var tokenData = tokenMap[tokenId];
                 if (tokenData == null)
                 {
-                    reportErrorAndThrow($"{errPrefix}: Invalid token id. Token ID: {tokenId}");
+                    reportErrorAndThrow($"({nameof(OnNEP17Payment)}): Invalid token id. Token ID: {tokenId}");
                 }
 
                 var token = (LunaMintsTokenState)StdLib.Deserialize(tokenData);
 
                 if (token.Owner != UInt160.Zero) 
-                    reportErrorAndThrow($"{errPrefix}: The specified token already has an owner. Token ID: {tokenId}");
+                    reportErrorAndThrow($"({nameof(OnNEP17Payment)}): The specified token already has an owner. Token ID: {tokenId}");
 
                 // Make sure the sender of this transaction (i.e. - the
                 //  "from" parameter) is not trying to buy a token they
                 //  already own.
                 if (token.Owner == from)
-                    reportErrorAndThrow($"{errPrefix}: The sender already owns the specified token. Token ID: {tokenId}");
+                    reportErrorAndThrow($"({nameof(OnNEP17Payment)}): The sender already owns the specified token. Token ID: {tokenId}");
 
                 // We use the "from" N3 address as the "to" parameter value
                 //  when calling the inherited Transfer() method becaause
@@ -315,7 +369,7 @@ namespace AndroidTechnologies
                 // If we are running on a private blockchain, we use our own
                 //  transfer method that does not execute 
                 if (!Transfer(from, tokenId, null)) 
-                    reportErrorAndThrow($"{errPrefix}: Transfer Failed.  Check permissions scopes.");
+                    reportErrorAndThrow($"({nameof(OnNEP17Payment)}): Transfer Failed.  Check permissions scopes.");
             }
         }
 
@@ -350,14 +404,24 @@ namespace AndroidTechnologies
         }
 
         /// <summary>
+        /// Get the N3 address we have in storage that identifies
+        ///  the contract owner.
+        /// </summary>
+        /// <returns>Returns the N3 address of the contract owner.s</returns>
+        protected UInt160 GetContractOwner() {
+            var key = new byte[] { Prefix_ContractOwner };
+
+            return  (UInt160)Storage.Get(Storage.CurrentContext, key);
+        }
+
+        /// <summary>
         /// Make sure this smart contract has a valid owner.
         /// </summary>
-        /// <returns>Returns TRUE if the contract has a a
+        /// <returns>Returns TRUE if the contract has a
         ///   valid owner, FALSE if not.</returns>
-        static bool ValidateContractOwner()
+        protected bool ValidateContractOwner()
         {
-            var key = new byte[] { Prefix_ContractOwner };
-            var contractOwner = (UInt160)Storage.Get(Storage.CurrentContext, key);
+            var contractOwner = GetContractOwner();
             var tx = (Transaction)Runtime.ScriptContainer;
 
             return contractOwner.Equals(tx.Sender) && Runtime.CheckWitness(contractOwner);
