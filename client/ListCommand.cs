@@ -37,11 +37,11 @@ namespace client
                     var owner = new UInt160(props["owner"].GetSpan());
                     var name = props["name"].GetString();
                     var description = props["description"].GetString();
-                    var image = props["image"].GetString();
+                    var imageUrl = props["image_url"].GetString();
 
                     // Write token info to console
                     console.WriteLine($"{i + 1}. {name} ({description})");
-                    console.WriteLine($"\t{image}");
+                    console.WriteLine($"\t{imageUrl}");
                     if (owner == UInt160.Zero)
                         console.WriteLine($"\tAvailable");
                     else

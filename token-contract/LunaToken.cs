@@ -22,9 +22,10 @@ namespace AndroidTechnologies
     [SupportedStandards("NEP-11")]
     [ContractPermission("*", "onNEP11Payment")]
     // public class LunaMintsTokenState : SmartContract
+    // public class LunaToken : Nep11Token<LunaMintsTokenState>
     public class LunaToken : Nep11Token<LunaMintsTokenState>
     {
-               // ----------- BEGIN: EVENTS ----------
+        // ----------- BEGIN: EVENTS ----------
 
         // These are the events emitted by this smart contract.
 
@@ -68,6 +69,17 @@ namespace AndroidTechnologies
         }
         */
 
+        /// <summary>
+        /// Debug function to display two UInt160 values side by
+        ///  side as a pair of columns containing the byte values
+        ///  for each UInt160 value.  Useful for inspecting two
+        ///  UInt160 values to look for differences between
+        ///  them.  The results are printed to the debug console.
+        /// </summary>
+        /// <param name="hash_1">The first UInt160 value to use in
+        ///  the comparison.</param>
+        /// <param name="hash_2">The second UInt160 value to use in
+        ///  the comparison.</param>
         private static void logSideBySideHashDisplay(UInt160 hash_1, UInt160 hash_2)
         {
             var loopCount = Math.Max(hash_1.Length, hash_2.Length);
@@ -82,11 +94,24 @@ namespace AndroidTechnologies
             }
         }
 
+        // The prefix to use for the contract owner field when
+        //  stored in a StorageMap object.
         const byte Prefix_ContractOwner = 0xFF;
 
+        /// <summary>
+        /// Return a string that represents the tokens this
+        ///  contract mints/maintains.
+        /// </summary>
+        /// <returns></returns>
         [Safe]
         public override string Symbol() => "LUNAMINTS";
 
+        /// <summary>
+        /// Get a token's property values.
+        /// </summary>
+        /// <param name="tokenId">The ID of the desired token.</param>
+        /// <returns>Returns a map object containing the desired token's
+        ///  metadata (field values).</returns>
         [Safe]
         public override Map<string, object> Properties(ByteString tokenId)
         {
@@ -96,12 +121,13 @@ namespace AndroidTechnologies
 
             // Even though the "owner" and "name" fields reside in the 
             //  Neo.SmartContract.Framework.Nep11TokenState class inherited
-            //  by our TokenState object, we are responsible for adding those
+            //  by our LunaMintsTokenState object, we are responsible for adding those
             // fields to the map of properties we return.
             map["owner"] = token.Owner;
             map["name"] = token.Name;
             map["description"] = token.Description;
-            map["image"] = token.Image;
+            map["image_url"] = token.ImageUrl;
+
             return map;
         }
 
@@ -150,7 +176,14 @@ namespace AndroidTechnologies
             }
         }
 
-        public static ByteString mintLunaToken(string name, string description, string image)
+        /// <summary>
+        /// Mint a new token.
+        /// </summary>
+        /// <param name="name">A descriptive name for the token.</param>
+        /// <param name="description">A short description of the token.</param>
+        /// <param name="imageUrl">The image URL, if applicable.</param>
+        /// <returns></returns>
+        public static ByteString mintLunaToken(string name, string description, string imageUrl)
         {
             var errPrefix = "(mintLunaToken) ";
 
@@ -160,12 +193,19 @@ namespace AndroidTechnologies
             // Generate new token ID.
             var tokenId = MyNewTokenId();
 
+            // Get a reference to the current transaction.
+            var tx = (Transaction)Runtime.ScriptContainer;
+
+            // Fill in the token's meta-data fields.
             var tokenState = new LunaMintsTokenState
             {
-                Owner = UInt160.Zero,
+                // The minter of the NFT is the initial owner.
+                //  A typical scenario would be an NFT artist
+                //  minting a token for later sale.
+                Owner = tx.Sender,
                 Name = name,
                 Description = description,
-                Image = image,
+                ImageUrl = imageUrl,
             };
 
             // Pass the call on to the NEP11Token.Mint() method.
@@ -179,51 +219,38 @@ namespace AndroidTechnologies
             return tokenId;
         }
 
+        /// <summary>
+        /// Withdraw the balance of GAS held by this contract and
+        ///   transfer it to the given destination.
+        /// </summary>
+        /// <param name="to">The N3 address to deliver the
+        ///  GAS to.</param>
+        /// <returns>Returns TRUE if a transfer was executed.  FALSE
+        ///   if not, because there is nothing to transfer.</returns>
         public bool Withdraw(UInt160 to)
         {
             if (!ValidateContractOwner()) 
-                throw new Exception("Only the contract owner can withdraw NEO");
+                throw new Exception("Only the contract owner can withdraw GAS");
             if (to == UInt160.Zero || !to.IsValid) 
                 throw new Exception("Invalid withrdrawal address");
 
-            var balance = NEO.BalanceOf(Runtime.ExecutingScriptHash);
+            var balance = GAS.BalanceOf(Runtime.ExecutingScriptHash);
             if (balance <= 0) 
                 return false;
 
-            return NEO.Transfer(Runtime.ExecutingScriptHash, to, balance);
+            return GAS.Transfer(Runtime.ExecutingScriptHash, to, balance);
         }
 
         /// <summary>
-        /// Transfer a token with special handling for a private instance
-        ///   of the NEO N3 blockchain (NEO Express).
+        /// This method is called by the GasToken contract after 
+        ///  a GAS payment has been made successfully (i.e. - a 
+        ///  payment has been made like when buying an NFT, etc.)
         /// </summary>
-        /// <param name="to">The N3 address of the party that should
-        ///  receive ownership of the token.</param>
-        /// <param name="tokenId">The ID of the desired tken.</param>
-        /// <param name="data">The custom data for the call.</param>
-        /// <returns></returns>
-        /// <exception cref="Exception"></exception>
-        /*
-        public static bool MyTransferToken(UInt160 to, ByteString tokenId, object data)
-        {
-            if (to is null || !to.IsValid)
-                throw new Exception("The argument \"to\" is invalid.");
-            StorageMap tokenMap = new(Storage.CurrentContext, Prefix_Token);
-            TokenState token = (TokenState)StdLib.Deserialize(tokenMap[tokenId]);
-            UInt160 from = token.Owner;
-            if (!Runtime.CheckWitness(from)) return false;
-            if (from != to)
-            {
-                token.Owner = to;
-                tokenMap[tokenId] = StdLib.Serialize(token);
-                UpdateBalance(from, tokenId, -1);
-                UpdateBalance(to, tokenId, +1);
-            }
-            PostTransfer(from, to, tokenId, data);
-            return true;
-        }        
-        */
-
+        /// <param name="from">The sender of the transaction, which
+        ///  is the user making the payment.</param>
+        /// <param name="amount">The amount of GAS paid.</param>
+        /// <param name="data">Any custom data that was included
+        ///  with the transfer/payment.</param>
         public static void OnNEP17Payment(UInt160 from, BigInteger amount, object data)
         {
             const string errPrefix = "(OnNEP17Payment) ";
@@ -237,9 +264,6 @@ namespace AndroidTechnologies
             if (data != null)
             {
                 var tokenId = (ByteString)data;
-
-                // string strCallingScriptHash = UInt160.ToAddress(Runtime.CallingScriptHash.ToArray());
-                // Runtime.Log($"{errPrefix} Calling script hash: {strCallingScriptHash}");
 
                 if (Runtime.CallingScriptHash == GAS.Hash)
                     Runtime.Log($"{errPrefix} The GAS contract is calling us.");
@@ -295,6 +319,13 @@ namespace AndroidTechnologies
             }
         }
 
+        /// <summary>
+        /// Deploy the smart contract.
+        /// </summary>
+        /// <param name="data">The contract contents (code and data).</param>
+        /// <param name="update">If TRUE, then this is an update of an 
+        ///  existing instance of the smart contract.  If FALSE then this
+        ///  is the first time the contract has been deployed.</param>
         [DisplayName("_deploy")]
         public static void Deploy(object data, bool update)
         {
@@ -305,6 +336,11 @@ namespace AndroidTechnologies
             Storage.Put(Storage.CurrentContext, key, tx.Sender);
         }
 
+        /// <summary>
+        /// Update the smart contract with a new version.
+        /// </summary>
+        /// <param name="nefFile">The smart contract NEF file as a string.</param>
+        /// <param name="manifest">The smart contract manifest.</param>
         public static void Update(ByteString nefFile, string manifest)
         {
             if (!ValidateContractOwner()) 
@@ -313,11 +349,17 @@ namespace AndroidTechnologies
             ContractManagement.Update(nefFile, manifest, null);
         }
 
+        /// <summary>
+        /// Make sure this smart contract has a valid owner.
+        /// </summary>
+        /// <returns>Returns TRUE if the contract has a a
+        ///   valid owner, FALSE if not.</returns>
         static bool ValidateContractOwner()
         {
             var key = new byte[] { Prefix_ContractOwner };
             var contractOwner = (UInt160)Storage.Get(Storage.CurrentContext, key);
             var tx = (Transaction)Runtime.ScriptContainer;
+
             return contractOwner.Equals(tx.Sender) && Runtime.CheckWitness(contractOwner);
         }
     }

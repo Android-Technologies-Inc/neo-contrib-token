@@ -17,8 +17,8 @@ namespace AndroidTechnologies
         /// </summary>
         public string Description = string.Empty;
         /// <summary>
-        /// The image associated with the token.
+        /// A URL to the image associated with the token.
         /// </summary>
-        public string Image = string.Empty;
+        public string ImageUrl = string.Empty;
     }
 }
